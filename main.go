@@ -35,6 +35,8 @@ func initWebServer() *gin.Engine {
 		//ExposeHeaders: []string{"x-jwt-token"},
 		// 是否允许你带 cookie 之类的东西
 		AllowCredentials: true,
+		// 允许的 head
+		ExposeHeaders: []string{"x-jwt-token"},
 		AllowOriginFunc: func(origin string) bool {
 			if strings.HasPrefix(origin, "http://localhost") ||
 				strings.HasPrefix(origin, "http://172.23.120.118") {
@@ -53,7 +55,10 @@ func initWebServer() *gin.Engine {
 	}
 	server.Use(sessions.Sessions("mysession", store))
 
-	server.Use(middleware.NewLoginMiddlewareBuilder().
+	//server.Use(middleware.NewLoginMiddlewareBuilder().
+	//	IgnorePaths("/users/signup").
+	//	IgnorePaths("/users/login").Build())
+	server.Use(middleware.NewLoginJTWMiddlewareBuilder().
 		IgnorePaths("/users/signup").
 		IgnorePaths("/users/login").Build())
 	return server
