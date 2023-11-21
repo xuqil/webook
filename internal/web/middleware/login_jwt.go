@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/xuqil/webook/internal/web"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -66,5 +67,16 @@ func (l *LoginJTWMiddlewareBuilder) Build() gin.HandlerFunc {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+
+		now := time.Now()
+		if claims.ExpiresAt.Sub(now) < time.Second*50 {
+			claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute))
+			tokenStr, err = token.SignedString([]byte("343d9040a671c45832ee5381860e2996"))
+			if err != nil {
+				log.Println("jwt 续约失败", err)
+			}
+			ctx.Header("x-jwt-token", tokenStr)
+		}
+		ctx.Set("claims", claims)
 	}
 }

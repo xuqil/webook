@@ -2,7 +2,6 @@ package web
 
 import (
 	"errors"
-	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -10,6 +9,7 @@ import (
 	"github.com/xuqil/webook/internal/domain"
 	"github.com/xuqil/webook/internal/service"
 	"net/http"
+	"time"
 )
 
 type UserHandler struct {
@@ -114,6 +114,9 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 
 	// 生成一个 JWT token
 	claims := UserClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
+		},
 		Uid:       user.Id,
 		UserAgent: ctx.Request.UserAgent(),
 	}
@@ -124,7 +127,6 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 		return
 	}
 	ctx.Header("x-jwt-token", tokenStr)
-	fmt.Println(tokenStr, user)
 	ctx.String(http.StatusOK, "登录成功")
 }
 

@@ -2,16 +2,17 @@ package main
 
 import (
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/xuqil/webook/internal/repository"
+	"github.com/xuqil/webook/internal/repository/cache"
 	"github.com/xuqil/webook/internal/repository/dao"
 	"github.com/xuqil/webook/internal/service"
 	"github.com/xuqil/webook/internal/web"
 	"github.com/xuqil/webook/internal/web/middleware"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -27,7 +28,7 @@ func main() {
 	server.GET("/hello", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "hello world")
 	})
-	server.Run(":8080")
+	log.Fatal(server.Run(":8080"))
 }
 
 func initWebServer() *gin.Engine {
@@ -51,13 +52,12 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
-	//store := cookie.NewStore([]byte("secret"))
-	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
-		[]byte("343d9040a671c45832ee5381860e2996"), []byte("bf22a1d0acfca4af517e1417a80e92d1"))
-	if err != nil {
-		panic(err)
-	}
-	server.Use(sessions.Sessions("mysession", store))
+	//store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+	//	[]byte("343d9040a671c45832ee5381860e2996"), []byte("bf22a1d0acfca4af517e1417a80e92d1"))
+	//if err != nil {
+	//	panic(err)
+	//}
+	//server.Use(sessions.Sessions("mysession", store))
 
 	//server.Use(middleware.NewLoginMiddlewareBuilder().
 	//	IgnorePaths("/users/signup").
@@ -70,7 +70,11 @@ func initWebServer() *gin.Engine {
 
 func initUser(db *gorm.DB) *web.UserHandler {
 	ud := dao.NewUserDAO(db)
-	repo := repository.NewUserRepository(ud)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
+	c := cache.NewUserCache(redisClient)
+	repo := repository.NewUserRepository(ud, c)
 	svc := service.NewUserService(repo)
 	u := web.NewUserHandler(svc)
 	return u
