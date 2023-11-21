@@ -12,6 +12,7 @@ import (
 	"github.com/xuqil/webook/internal/web/middleware"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -23,6 +24,9 @@ func main() {
 	u := initUser(db)
 	u.RegisterRoutes(server)
 
+	server.GET("/hello", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, "hello world")
+	})
 	server.Run(":8080")
 }
 
