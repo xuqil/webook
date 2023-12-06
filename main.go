@@ -4,10 +4,12 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"github.com/xuqil/webook/config"
 	"github.com/xuqil/webook/internal/repository"
 	"github.com/xuqil/webook/internal/repository/cache"
 	"github.com/xuqil/webook/internal/repository/dao"
 	"github.com/xuqil/webook/internal/service"
+	"github.com/xuqil/webook/internal/service/sms/memory"
 	"github.com/xuqil/webook/internal/web"
 	"github.com/xuqil/webook/internal/web/middleware"
 	"gorm.io/driver/mysql"
@@ -22,7 +24,8 @@ func main() {
 	db := initDB()
 	server := initWebServer()
 
-	u := initUser(db)
+	rdb := initRedis()
+	u := initUser(db, rdb)
 	u.RegisterRoutes(server)
 
 	server.GET("/hello", func(ctx *gin.Context) {
@@ -64,19 +67,29 @@ func initWebServer() *gin.Engine {
 	//	IgnorePaths("/users/login").Build())
 	server.Use(middleware.NewLoginJTWMiddlewareBuilder().
 		IgnorePaths("/users/signup").
+		IgnorePaths("/login_sms/code/send").
+		IgnorePaths("/login_sms").
 		IgnorePaths("/users/login").Build())
 	return server
 }
 
-func initUser(db *gorm.DB) *web.UserHandler {
-	ud := dao.NewUserDAO(db)
+func initRedis() redis.Cmdable {
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: config.Config.Redis.Addr,
 	})
-	c := cache.NewUserCache(redisClient)
-	repo := repository.NewUserRepository(ud, c)
+	return redisClient
+}
+
+func initUser(db *gorm.DB, rdb redis.Cmdable) *web.UserHandler {
+	ud := dao.NewUserDAO(db)
+	uc := cache.NewUserCache(rdb)
+	repo := repository.NewUserRepository(ud, uc)
 	svc := service.NewUserService(repo)
-	u := web.NewUserHandler(svc)
+	codeCache := cache.NewCodeCache(rdb)
+	codeRepo := repository.NewCodeRepository(codeCache)
+	smsSvc := memory.NewService()
+	codeSvc := service.NewCodeService(codeRepo, smsSvc)
+	u := web.NewUserHandler(svc, codeSvc)
 	return u
 }
 
