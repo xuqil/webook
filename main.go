@@ -67,8 +67,8 @@ func initWebServer() *gin.Engine {
 	//	IgnorePaths("/users/login").Build())
 	server.Use(middleware.NewLoginJTWMiddlewareBuilder().
 		IgnorePaths("/users/signup").
-		IgnorePaths("/login_sms/code/send").
-		IgnorePaths("/login_sms").
+		IgnorePaths("/users/login_sms/code/send").
+		IgnorePaths("/users/login_sms").
 		IgnorePaths("/users/login").Build())
 	return server
 }
@@ -94,7 +94,7 @@ func initUser(db *gorm.DB, rdb redis.Cmdable) *web.UserHandler {
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook"))
+	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
 	if err != nil {
 		panic(err)
 	}
