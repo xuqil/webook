@@ -15,6 +15,8 @@ import (
 
 const biz = "login"
 
+var _ handler = (*UserHandler)(nil)
+
 type UserHandler struct {
 	svc         *service.UserService
 	codeSvc     *service.CodeService

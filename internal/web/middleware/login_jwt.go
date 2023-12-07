@@ -11,21 +11,21 @@ import (
 	"time"
 )
 
-// LoginJTWMiddlewareBuilder JWT 登录校验
-type LoginJTWMiddlewareBuilder struct {
+// LoginJWTMiddlewareBuilder JWT 登录校验
+type LoginJWTMiddlewareBuilder struct {
 	paths []string
 }
 
-func NewLoginJTWMiddlewareBuilder() *LoginJTWMiddlewareBuilder {
-	return &LoginJTWMiddlewareBuilder{}
+func NewLoginJWTMiddlewareBuilder() *LoginJWTMiddlewareBuilder {
+	return &LoginJWTMiddlewareBuilder{}
 }
 
-func (l *LoginJTWMiddlewareBuilder) IgnorePaths(path string) *LoginJTWMiddlewareBuilder {
+func (l *LoginJWTMiddlewareBuilder) IgnorePaths(path string) *LoginJWTMiddlewareBuilder {
 	l.paths = append(l.paths, path)
 	return l
 }
 
-func (l *LoginJTWMiddlewareBuilder) Build() gin.HandlerFunc {
+func (l *LoginJWTMiddlewareBuilder) Build() gin.HandlerFunc {
 	// 用 Go 的方式编码解码
 	gob.Register(time.Now())
 	return func(ctx *gin.Context) {
