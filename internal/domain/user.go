@@ -8,5 +8,7 @@ type User struct {
 	Email    string
 	Phone    string
 	Password string
-	Ctime    time.Time
+
+	WechatInfo WechatInfo
+	Ctime      time.Time
 }

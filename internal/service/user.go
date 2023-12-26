@@ -14,10 +14,9 @@ var ErrInvalidUserOrPassword = errors.New("账号/影响或密码不对")
 type UserService interface {
 	Login(ctx context.Context, email, password string) (domain.User, error)
 	SignUp(ctx context.Context, u domain.User) error
-	FindOrCreate(ctx context.Context,
-		phone string) (domain.User, error)
-	Profile(ctx context.Context,
-		id int64) (domain.User, error)
+	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
+	FindOrCreateByWechat(ctx context.Context, wechatInfo domain.WechatInfo) (domain.User, error)
+	Profile(ctx context.Context, id int64) (domain.User, error)
 }
 
 type userService struct {
@@ -54,6 +53,23 @@ func (svc *userService) SignUp(ctx context.Context, u domain.User) error {
 	u.Password = string(hash)
 	// 2. 持久化
 	return svc.repo.Create(ctx, u)
+}
+
+func (svc *userService) FindOrCreateByWechat(ctx context.Context,
+	info domain.WechatInfo) (domain.User, error) {
+	u, err := svc.repo.FindByWechat(ctx, info.OpenID)
+	if err != repository.ErrUserNotFound {
+		return u, err
+	}
+	u = domain.User{
+		WechatInfo: info,
+	}
+	err = svc.repo.Create(ctx, u)
+	if err != nil && err != repository.ErrUserDuplicate {
+		return u, err
+	}
+
+	return svc.repo.FindByWechat(ctx, info.OpenID)
 }
 
 func (svc *userService) Profile(ctx context.Context, id int64) (domain.User, error) {
